@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>شات ام كلثوم</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      text-align: right;
+      margin: 50px;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 200px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+    #chatForm input, #chatForm button {
+      padding: 5px;
+      margin: 5px 0;
+    }
+    audio {
+      display: block;
+      margin-bottom: 20px;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>شات مع راديو</h1>
+
+  <audio id="audioPlayer" controls autoplay></audio>
+
+  <div id="messages"></div>
+
+  <form id="chatForm">
+    <label for="username">اسمك</label><br>
+    <input type="text" id="username" placeholder="اكتب اسمك هنا"><br>
+    <label for="message">رسالتك</label><br>
+    <input type="text" id="message" placeholder="اكتب رسالتك هنا"><br>
+    <button type="submit">إرسال</button>
+  </form>
+
+  <script>
+    // إعدادات Firebase
+    const firebaseConfig = {
+      apiKey: "BKKJXJtGE5EtsF7pwUySv6tV1dQbTu37PNFNoK1jHZYjpu0vkRccNAoxsHHK4dViZNRVxXtz_X6L5vbvg1vSdc",
+      databaseURL: "https://instapro-c105f-default-rtdb.firebaseio.com"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const messagesRef = database.ref("messages");
+
+    const usernameInput = document.getElementById("username");
+    const messageInput = document.getElementById("message");
+    const messagesDiv = document.getElementById("messages");
+    const chatForm = document.getElementById("chatForm");
+
+    // الاسم محفوظ محليًا
+    usernameInput.value = localStorage.getItem("username") || "";
+
+    chatForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const message = messageInput.value.trim();
+
+      if (!username || !message) {
+        alert("اكتب اسمك ورسالتك!");
+        return;
+      }
+
+      localStorage.setItem("username", username);
+
+      messagesRef.push({
+        name: username,
+        text: message,
+        timestamp: Date.now()
+      });
+
+      messageInput.value = "";
+    });
+
+    messagesRef.on("child_added", function(snapshot) {
+      const msg = snapshot.val();
+      const msgElement = document.createElement("div");
+      msgElement.textContent = msg.name + " : " + msg.text;
+      messagesDiv.appendChild(msgElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+
+    // كود الراديو
+    document.addEventListener('DOMContentLoaded', function () {
+      const sources = [
+        "https://stream-153.zeno.fm/puv30d6l1bjtv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJwdXYzMGQ2bDFianR2IiwiaG9zdCI6InN0cmVhbS0xNTMuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6IjBvc0ViZUtxU0ZHaGdqZER6Vm5aMGciLCJpYXQiOjE3NTMwMzYzMTQsImV4cCI6MTc1MzAzNjM3NH0.sSFGluDE8UI6v7purdYOByUO_91Fej5GhmsGFjz-qBo"
+      ];
+      let currentIndex = 0;
+      const audioPlayer = document.getElementById('audioPlayer');
+
+      function changeSource() {
+        if (currentIndex >= sources.length) {
+          currentIndex = 0;
+        }
+        audioPlayer.src = sources[currentIndex];
+        audioPlayer.play().catch(error => {
+          console.error("Error playing audio:", error);
+          alert('حدث خطأ أثناء محاولة تشغيل الصوت. تأكد من الاتصال بالإنترنت.');
+        });
+        currentIndex++;
+      }
+
+      changeSource(); // تشغيل الرابط الأول فورًا
+      // نظرًا لوجود رابط واحد الآن، فإن setInterval لن يغير الرابط.
+      // إذا كنت ترغب في إعادة تحميل نفس الرابط بشكل دوري، فسيظل هذا السطر مفيدًا.
+      setInterval(changeSource, 60000); // كل دقيقة
+    });
+  </script>
+</body>
+</html>
